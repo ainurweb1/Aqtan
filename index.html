@@ -1,0 +1,392 @@
+﻿<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Әдебиет ТВ-Шоу: "Ақтан Жас" Тағдыр Сынағы</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Deep dark blue background */
+            color: #e2e8f0;
+        }
+        /* Custom TV Show Theme Styles */
+        .show-header {
+            background: linear-gradient(90deg, #1e293b, #334155, #1e293b);
+            border-bottom: 5px solid #FBBF24; /* Gold accent line */
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5);
+        }
+        .show-title {
+            text-shadow: 2px 2px #0f172a;
+        }
+        .task-button {
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-weight: 800;
+            letter-spacing: 1px;
+            border: 2px solid;
+            box-shadow: 0 4px #0f172a, 0 8px 15px rgba(0, 0, 0, 0.4);
+        }
+        .task-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px #0f172a, 0 10px 20px rgba(0, 0, 0, 0.6);
+        }
+        .task-card {
+            background-color: #1e293b; /* Dark card background */
+            min-height: 550px;
+            border: 4px solid #334155;
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.3); /* Soft blue glow */
+        }
+        .category-box {
+            background-color: #334155;
+            border-radius: 0.75rem;
+            border-width: 2px;
+            min-height: 120px;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+        .fragment-item {
+            cursor: pointer;
+            background-color: #1e293b;
+            border: 1px solid #475569;
+            transition: background-color 0.2s;
+        }
+        .fragment-item:hover {
+            background-color: #2d3848;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- TV Show Header/Banner -->
+    <header class="show-header text-center mb-10 p-6 rounded-2xl">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-white show-title">"ӘДЕБИЕТ СЫНАҒЫ" ШОУЫ</h1>
+        <p class="text-xl text-yellow-400 mt-2 font-light">"О, Ақтан Жас" Поэмасы - Тағдыр Картасы</p>
+    </header>
+
+    <!-- Round Selection Controls -->
+    <div class="flex flex-wrap justify-center gap-6 mb-10">
+        <button id="btn-level-1" onclick="loadLevel(1)" class="task-button px-8 py-4 rounded-2xl bg-green-600 text-white border-green-400 focus:outline-none focus:ring-4 focus:ring-green-300">
+            🥇 1-РАУНД: СҰРЫПТАУ
+        </button>
+        <button id="btn-level-2" onclick="loadLevel(2)" class="task-button px-8 py-4 rounded-2xl bg-yellow-600 text-white border-yellow-400 focus:outline-none focus:ring-4 focus:ring-yellow-300">
+            🥈 2-РАУНД: ТАЛДАУ
+        </button>
+        <button id="btn-level-3" onclick="loadLevel(3)" class="task-button px-8 py-4 rounded-2xl bg-red-600 text-white border-red-400 focus:outline-none focus:ring-4 focus:ring-red-300">
+            🥉 3-РАУНД: АРГУМЕНТ
+        </button>
+    </div>
+
+    <!-- Main Stage/Task Container -->
+    <main id="taskContainer" class="task-card p-6 md:p-12 rounded-3xl">
+        <!-- Content will be injected here by JavaScript -->
+        <p class="text-center text-2xl text-gray-400 mt-20 font-bold">Ойынды бастау үшін жоғарыдағы Раундты таңдаңыз!</p>
+    </main>
+
+    <!-- Judge's Verdict / Feedback Area -->
+    <div class="mt-10 p-6 bg-blue-900 border-l-8 border-blue-500 rounded-xl shadow-2xl hidden" id="resultsArea">
+        <h3 class="text-3xl font-extrabold text-blue-300 mb-4 uppercase">Төреші Шешімі</h3>
+        <p id="feedbackText" class="text-gray-200 text-lg"></p>
+    </div>
+
+    <script>
+        // Data for Level 1
+        const fragments = [
+            { text: "Жетімдіктің белінен Асып өтер ме екенсің?", category: 0, id: 1 },
+            { text: "Бала сүйіп, мал жиып, Керсеніңе бал құйып...", category: 1, id: 2 },
+            { text: "Жарық сәуле көре алмай, Ел шаңына ере алмай...", category: 0, id: 3 },
+            { text: "Сауыт киер ме екенсің?", category: 1, id: 4 },
+            { text: "Жапанға біткен жапырақ Жамылсаң тонар ма екенсің?", category: 0, id: 5 },
+            { text: "Тұлпар атты жаратып, Құйрық - жалын таратып...", category: 1, id: 6 },
+            { text: "Қажыма, Ақтан, қажыма.", category: 2, id: 7 },
+            { text: "Тең құрбыңмен теңеліп, Шаруа жиып кенеліп...", category: 1, id: 8 },
+            { text: "Жетерсің, әлі жетерсің.", category: 2, id: 9 }
+        ];
+
+        let currentSelections = {}; // Store selections for Level 1
+        let currentLevel = 0;
+
+        /**
+         * Loads the content for the selected task level (Round).
+         * @param {number} level - The level number (1, 2, or 3).
+         */
+        function loadLevel(level) {
+            const container = document.getElementById('taskContainer');
+            currentLevel = level;
+            container.innerHTML = '';
+            document.getElementById('resultsArea').classList.add('hidden');
+
+            // Reset button styles and apply active style
+            document.querySelectorAll('.task-button').forEach(btn => btn.classList.remove('ring-4', 'ring-offset-2', 'ring-yellow-300'));
+            document.getElementById(`btn-level-${level}`).classList.add('ring-4', 'ring-offset-2', 'ring-yellow-300');
+            document.getElementById(`btn-level-${level}`).classList.remove('ring-offset-2'); // Remove offset for a cleaner look
+
+            switch (level) {
+                case 1:
+                    container.innerHTML = generateLevel1HTML();
+                    setupLevel1();
+                    break;
+                case 2:
+                    container.innerHTML = generateLevel2HTML();
+                    break;
+                case 3:
+                    container.innerHTML = generateLevel3HTML();
+                    break;
+                default:
+                    container.innerHTML = '<p class="text-center text-2xl text-gray-400 mt-20">Қате раунд таңдалды.</p>';
+            }
+        }
+
+        // --- HTML Generation Functions ---
+
+        function generateLevel1HTML() {
+            return `
+                <h2 class="text-3xl font-bold text-yellow-400 mb-8 border-b-2 border-yellow-500 pb-3 uppercase">1-РАУНД: БАЙЛАНЫСТЫ ТАП</h2>
+                <p class="text-gray-300 mb-6">Бұл раундта сіз үзінділерді оқып, оларды үш негізгі тақырыптың біріне орналастыруыңыз керек. Дұрыс сұрыптау – сіздің алғашқы ұпайыңыз!</p>
+
+                <div id="fragmentsList" class="mb-8 p-4 bg-gray-800 rounded-xl border border-gray-600 custom-scroll max-h-40 overflow-y-auto shadow-inner">
+                    <p class="text-sm text-yellow-400 mb-2 font-bold">Қажетті Үзінділер Банкі:</p>
+                    ${fragments.map(f => `<div id="frag-${f.id}" class="fragment-item p-2 rounded-lg shadow-md mb-2 text-sm text-gray-200">${f.text}</div>`).join('')}
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div id="cat-0" class="category-box p-4 border-red-500">
+                        <h3 class="font-semibold text-xl text-red-400 mb-3">1. ҚАУІП & ЖЕТІМДІК (Сұрақтар)</h3>
+                        <div class="space-y-2 min-h-[100px]" data-category="0"></div>
+                    </div>
+                    <div id="cat-1" class="category-box p-4 border-blue-500">
+                        <h3 class="font-semibold text-xl text-blue-400 mb-3">2. ҮМІТ & БОЛАШАҚ (Армандар)</h3>
+                        <div class="space-y-2 min-h-[100px]" data-category="1"></div>
+                    </div>
+                    <div id="cat-2" class="category-box p-4 border-green-500">
+                        <h3 class="font-semibold text-xl text-green-400 mb-3">3. АҚЫННЫҢ СЕНІМІ (Жолдау)</h3>
+                        <div class="space-y-2 min-h-[100px]" data-category="2"></div>
+                    </div>
+                </div>
+
+                <button onclick="checkTask()" class="mt-10 w-full px-4 py-4 bg-yellow-500 text-gray-900 font-extrabold rounded-2xl shadow-xl hover:bg-yellow-400 transition task-button border-yellow-200">
+                    РАУНДТЫ АЯҚТАУ & НӘТИЖЕНІ ТЕКСЕРУ
+                </button>
+            `;
+        }
+
+        function generateLevel2HTML() {
+            return `
+                <h2 class="text-3xl font-bold text-yellow-400 mb-8 border-b-2 border-yellow-500 pb-3 uppercase">2-РАУНД: ТАЛДАУ ТЕРЕҢДІГІ</h2>
+                <p class="text-gray-300 mb-6">Поэтикалық сұрақтардың астарында жатқан автордың **жасырын үмітін/қаупін** ашып, жан-жақты талдау жасаңыз.</p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Тақырып 1: Батырлық -->
+                    <div class="p-6 bg-gray-800 rounded-xl border border-yellow-600 shadow-lg">
+                        <h3 class="font-extrabold text-xl text-yellow-400 mb-3">СЕГМЕНТ A: БАТЫРЛЫҚ ЖОЛ</h3>
+                        <p class="text-sm text-gray-400 mb-3">Сауыт кию, жау қашыру сияқты сұрақтардағы автордың ішкі күйі:</p>
+                        <textarea id="analysis1" rows="8" class="w-full p-4 border border-gray-600 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 bg-gray-700 text-white" placeholder="Талдауды кем дегенде 4 сөйлеммен бастаңыз..."></textarea>
+                    </div>
+
+                    <!-- Тақырып 2: Бақытты өмір -->
+                    <div class="p-6 bg-gray-800 rounded-xl border border-yellow-600 shadow-lg">
+                        <h3 class="font-extrabold text-xl text-yellow-400 mb-3">СЕГМЕНТ B: ДӘУЛЕТ ЖӘНЕ БАҚЫТ</h3>
+                        <p class="text-sm text-gray-400 mb-3">Сұлу сүю, мал жию сияқты сұрақтардағы автордың ішкі күйі:</p>
+                        <textarea id="analysis2" rows="8" class="w-full p-4 border border-gray-600 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 bg-gray-700 text-white" placeholder="Талдауды кем дегенде 4 сөйлеммен бастаңыз..."></textarea>
+                    </div>
+                </div>
+
+                <button onclick="checkTask()" class="mt-10 w-full px-4 py-4 bg-yellow-500 text-gray-900 font-extrabold rounded-2xl shadow-xl hover:bg-yellow-400 transition task-button border-yellow-200">
+                    РАУНДТЫ АЯҚТАУ & НӘТИЖЕНІ ТЕКСЕРУ
+                </button>
+            `;
+        }
+
+        function generateLevel3HTML() {
+            return `
+                <h2 class="text-3xl font-bold text-yellow-400 mb-8 border-b-2 border-yellow-500 pb-3 uppercase">3-РАУНД: ТАҒДЫР ЖОЛДАУЫ</h2>
+                <p class="text-gray-300 mb-6">Сіз — өлең авторысыз. Неліктен Ақтанның міндетті түрде жеңіске жететініне сенімдісіз? Сенімділікті дәлелдейтін 3 аргументті ұсыныңыз және мотивациялық хат жазыңыз.</p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2 p-6 bg-gray-800 rounded-xl border border-red-600 shadow-lg">
+                        <h3 class="font-extrabold text-xl text-red-400 mb-3">МОТИВАЦИЯЛЫҚ ХАТ (120-150 сөз)</h3>
+                        <textarea id="letterContent" rows="12" class="w-full p-4 border border-gray-600 rounded-lg focus:ring-red-500 focus:border-red-500 bg-gray-700 text-white" placeholder="Құрметті Ақтан, сенің болашағың туралы ойлағанда, менің көңілім тынышталады..."></textarea>
+                    </div>
+
+                    <div class="lg:col-span-1 p-6 bg-gray-800 rounded-xl border border-red-600 shadow-lg">
+                        <h3 class="font-extrabold text-xl text-red-400 mb-3">СЕНІМДІЛІК АРГУМЕНТТЕРІ (3)</h3>
+                        <p class="text-sm text-gray-400 mb-3">Өлеңнен алынған, сіздің сеніміңізді негіздейтін 3 нақты дәлел:</p>
+                        <input type="text" id="arg1" class="w-full p-3 border border-gray-600 rounded-md mb-3 bg-gray-700 text-white placeholder-gray-400" placeholder="1-ші Аргумент (Мысалы: Ішкі күш)">
+                        <input type="text" id="arg2" class="w-full p-3 border border-gray-600 rounded-md mb-3 bg-gray-700 text-white placeholder-gray-400" placeholder="2-ші Аргумент (Мысалы: Жігер)">
+                        <input type="text" id="arg3" class="w-full p-3 border border-gray-600 rounded-md bg-gray-700 text-white placeholder-gray-400" placeholder="3-ші Аргумент (Мысалы: Ақынның мұраты)">
+                    </div>
+                </div>
+
+                <button onclick="checkTask()" class="mt-10 w-full px-4 py-4 bg-yellow-500 text-gray-900 font-extrabold rounded-2xl shadow-xl hover:bg-yellow-400 transition task-button border-yellow-200">
+                    РАУНДТЫ АЯҚТАУ & НӘТИЖЕНІ ТЕКСЕРУ
+                </button>
+            `;
+        }
+
+        // --- Level 1 Logic (unchanged from original, only styling affects) ---
+
+        function setupLevel1() {
+            currentSelections = {};
+            fragments.forEach(f => {
+                const fragmentElement = document.getElementById(`frag-${f.id}`);
+                if (fragmentElement) {
+                    fragmentElement.onclick = () => showCategorySelector(fragmentElement, f.id);
+                }
+            });
+            renderLevel1Categories();
+        }
+
+        function renderLevel1Categories() {
+            document.querySelectorAll('[data-category]').forEach(div => div.innerHTML = '');
+
+            Object.keys(currentSelections).forEach(fragmentId => {
+                const frag = fragments.find(f => f.id == fragmentId);
+                const category = currentSelections[fragmentId];
+                const categoryDiv = document.querySelector(`[data-category="${category}"]`);
+
+                if (categoryDiv && frag) {
+                    const item = document.createElement('div');
+                    item.className = 'p-1 px-3 bg-gray-700 text-gray-200 rounded-md border border-gray-600 text-sm flex justify-between items-center shadow-sm';
+                    item.innerHTML = `<span class="truncate">${frag.text}</span> <button class="ml-2 text-red-400 font-bold text-xs hover:text-red-300" onclick="removeFragment(${frag.id}, event)">X</button>`;
+                    categoryDiv.appendChild(item);
+                }
+            });
+            document.getElementById('fragmentsList').innerHTML = fragments.filter(f => !currentSelections[f.id]).map(f => `<div id="frag-${f.id}" class="fragment-item p-2 rounded-lg shadow-md mb-2 text-sm text-gray-200">${f.text}</div>`).join('');
+            fragments.filter(f => !currentSelections[f.id]).forEach(f => {
+                const fragmentElement = document.getElementById(`frag-${f.id}`);
+                if (fragmentElement) {
+                    fragmentElement.onclick = () => showCategorySelector(fragmentElement, f.id);
+                }
+            });
+        }
+
+        function showCategorySelector(element, fragmentId) {
+            // FIX: Store the overlay element before removal to ensure the check is consistent.
+            const existingOverlay = document.querySelector('#categorySelectorOverlay');
+            if (existingOverlay) {
+                document.body.removeChild(existingOverlay);
+            }
+
+            if (currentSelections[fragmentId] !== undefined) {
+                delete currentSelections[fragmentId];
+            }
+
+            // Create selector
+            const selector = document.createElement('div');
+            selector.className = 'absolute z-20 p-3 bg-gray-900 border-4 border-yellow-400 rounded-xl shadow-2xl flex flex-col space-y-2';
+
+            // Calculate position relative to the main container
+            const rect = element.getBoundingClientRect();
+            const containerRect = document.getElementById('taskContainer').getBoundingClientRect();
+            selector.style.top = `${rect.bottom + window.scrollY - 10}px`;
+            selector.style.left = `${rect.left + window.scrollX}px`;
+
+            const categories = [
+                { name: '1. ҚАУІП & ЖЕТІМДІК', value: 0, color: 'text-red-400' },
+                { name: '2. ҮМІТ & БОЛАШАҚ', value: 1, color: 'text-blue-400' },
+                { name: '3. АҚЫННЫҢ СЕНІМІ', value: 2, color: 'text-green-400' }
+            ];
+
+            categories.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = `text-left px-4 py-2 text-sm rounded-lg font-semibold hover:bg-gray-700 border-2 border-transparent hover:border-yellow-400 ${cat.color}`;
+                btn.textContent = cat.name;
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    currentSelections[fragmentId] = cat.value;
+                    renderLevel1Categories();
+                    // FIX: Check if the element exists before attempting removal.
+                    const overlayToRemove = document.querySelector('#categorySelectorOverlay');
+                    if (overlayToRemove) {
+                       document.body.removeChild(overlayToRemove);
+                    }
+                };
+                selector.appendChild(btn);
+            });
+
+            const overlay = document.createElement('div');
+            overlay.id = 'categorySelectorOverlay';
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100%';
+            overlay.style.height = '100%';
+            overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            overlay.style.zIndex = '15';
+            overlay.onclick = () => document.body.removeChild(overlay);
+
+            document.body.appendChild(overlay);
+            document.body.appendChild(selector);
+            selector.style.zIndex = '20';
+        }
+
+        function removeFragment(fragmentId, event) {
+            event.stopPropagation();
+            delete currentSelections[fragmentId];
+            renderLevel1Categories();
+        }
+
+
+        // --- Check Task Function (Simplified Feedback) ---
+
+        function checkTask() {
+            const resultsArea = document.getElementById('resultsArea');
+            const feedbackText = document.getElementById('feedbackText');
+            resultsArea.classList.remove('hidden');
+
+            let message = '';
+            let score = 0;
+            let maxScore = 0;
+
+            if (currentLevel === 1) {
+                // Simplified grading for Level 1 (counting correct placements)
+                let correctCount = 0;
+                fragments.forEach(f => {
+                    if (currentSelections[f.id] !== undefined && currentSelections[f.id] === f.category) {
+                        correctCount++;
+                    }
+                });
+                maxScore = 3;
+                score = (correctCount / fragments.length) * maxScore;
+                message = `Сіз ${fragments.length} үзіндіден **${correctCount}-ін** дұрыс сұрыптадыңыз. Раунд 1 ұпайы: **${score.toFixed(1)} / ${maxScore}**.<br> <span class="font-extrabold text-green-400">✅ Қорытынды: Енді 2-Раундқа көшіңіз!</span>`;
+
+            } else if (currentLevel === 2) {
+                const analysis1 = document.getElementById('analysis1').value.trim();
+                const analysis2 = document.getElementById('analysis2').value.trim();
+                maxScore = 6;
+                if (analysis1.length > 50 && analysis2.length > 50) {
+                    score = 6;
+                    message = `Талдау жұмысы толық, мәтіннің терең мағынасы ашылған. Раунд 2 ұпайы: **6 / 6**.<br> <span class="font-extrabold text-green-400">🔥 Қорытынды: Тамаша! Жоғары деңгейлі 3-Раундқа өтіңіз.</span>`;
+                } else {
+                    score = Math.floor((analysis1.length + analysis2.length) / 40); // Simple heuristic
+                    score = Math.min(score, maxScore);
+                    message = `Талдау әлі толық емес. Әр сегментке толыққанды, жан-жақты талдау жасау үшін көлемді арттырыңыз. Раунд 2 ұпайы: **${score} / ${maxScore}** (толықтырыңыз).`;
+                }
+            } else if (currentLevel === 3) {
+                const letterContent = document.getElementById('letterContent').value.trim();
+                const arg1 = document.getElementById('arg1').value.trim();
+                const arg2 = document.getElementById('arg2').value.trim();
+                const arg3 = document.getElementById('arg3').value.trim();
+                maxScore = 6;
+
+                if (letterContent.length > 100 && arg1 && arg2 && arg3) {
+                    score = 6;
+                    message = `Хат пен 3 дәлел сәтті ұсынылды! Сіз мәтіннің негізгі идеясын сын тұрғысынан бағалай алдыңыз. Жалпы ұпай: **6 / 6**.<br> <span class="font-extrabold text-yellow-400">🏆 Қорытынды: Құттықтаймыз! Барлық Раундтарды өттіңіз!</span>`;
+                } else {
+                    score = (letterContent.length > 100 ? 2 : 0) + (arg1 ? 1 : 0) + (arg2 ? 1 : 0) + (arg3 ? 1 : 0);
+                    score = Math.min(score, maxScore);
+                    message = `Хатты (120 сөзден артық) және барлық 3 аргументті толық көрсетіңіз. Раунд 3 ұпайы: **${score} / ${maxScore}** (толықтырыңыз).`;
+                }
+            }
+
+            feedbackText.innerHTML = message;
+        }
+
+        // Load the first level on initial page load
+        window.onload = () => loadLevel(1);
+
+    </script>
+</body>
+</html>
